@@ -1,0 +1,33 @@
+{
+  "name": "three",
+  "version": "1.0.0",
+  "description": "Three is a local-first, voice-first personal AI operating assistant.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jsurya114/Three.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jsurya114/Three/issues"
+  },
+  "homepage": "https://github.com/jsurya114/Three#readme",
+  "dependencies": {
+    "playwright": "^1.62.1",
+    "playwright-core": "^1.62.1",
+    "ws": "^8.21.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.1"
+  }
+}

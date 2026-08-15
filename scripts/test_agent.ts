@@ -1,27 +1,58 @@
 import { ComputerAgent } from '../agents/computer/index';
-import { AgentContext } from '../packages/types/agent';
+import { PermissionManager } from '../packages/core/permission/PermissionManager';
+import { JsonPermissionRepository } from '../packages/core/permission/JsonPermissionRepository';
+import { WebSocketUIBridge } from '../packages/core/permission/UIBridge';
+import { BridgeClient } from '../packages/core/bridge/BridgeClient';
+import * as os from 'os';
+import * as path from 'path';
+import * as fs from 'fs';
 
-async function run() {
-  const agent = new ComputerAgent();
+async function testPhase1() {
+  console.log('Testing Computer Agent Native Execution...');
+
+  const workspace = path.join(os.homedir(), '.three');
+  if (!fs.existsSync(workspace)) fs.mkdirSync(workspace, { recursive: true });
+  
+  const repo = new JsonPermissionRepository(workspace);
+  const uiBridge = new WebSocketUIBridge(18884);
+  const bridgeClient = new BridgeClient(18881);
+  const pm = new PermissionManager(repo, uiBridge);
+
+  // Auto-allow all for Phase 1 end-to-end testing
+  pm.requirePermission = async (scope, op, resource, reason) => {
+    console.log(`[Permission Requested] ${op} on ${resource}`);
+    return true; // Auto-allow
+  };
+
+  const agent = new ComputerAgent(pm, bridgeClient);
   await agent.initialize();
 
-  const context: AgentContext = { taskId: 'test-123', workspacePath: __dirname };
+  // Test Application
+  console.log('Opening Application...');
+  const context = { sessionId: 'test', userId: 'test' };
 
-  console.log('Testing open_application...');
-  let result = await agent.execute('open_application:Calculator', context);
-  console.log(result);
+  console.log("Opening Application...");
+  console.log(await agent.execute(JSON.stringify([{ type: 'OPEN_APPLICATION', args: { name: 'Calculator' }, resource: 'Calculator', reason: 'Test' }]), context));
 
-  console.log('Testing get_clipboard...');
-  result = await agent.execute('get_clipboard', context);
-  console.log(result);
+  console.log("Opening Folder...");
+  console.log(await agent.execute(JSON.stringify([{ type: 'OPEN_DIRECTORY', args: { path: '/tmp' }, resource: '/tmp', reason: 'Test' }]), context));
 
-  console.log('Testing set_clipboard...');
-  result = await agent.execute('set_clipboard:Hello from Three AI!', context);
-  console.log(result);
+  console.log("Opening File...");
+  console.log(await agent.execute(JSON.stringify([{ type: 'OPEN_FILE', args: { path: '/etc/hosts' }, resource: '/etc/hosts', reason: 'Test' }]), context));
 
-  console.log('Testing get_clipboard again...');
-  result = await agent.execute('get_clipboard', context);
-  console.log(result);
+  console.log("Setting Clipboard...");
+  console.log(await agent.execute(JSON.stringify([{ type: 'CLIPBOARD_WRITE', args: { text: 'Hello from Three Agent' }, resource: 'clipboard', reason: 'Test' }]), context));
+
+  console.log("Getting Clipboard...");
+  console.log(await agent.execute(JSON.stringify([{ type: 'CLIPBOARD_READ', args: {}, resource: 'clipboard', reason: 'Test' }]), context));
+
+  console.log("Taking Screenshot...");
+  console.log(await agent.execute(JSON.stringify([{ type: 'SCREENSHOT', args: { savePath: '/tmp/test_shot.png' }, resource: 'screen', reason: 'Test' }]), context));
+
+  console.log("Closing Application...");
+  console.log(await agent.execute(JSON.stringify([{ type: 'CLOSE_APPLICATION', args: { name: 'Calculator' }, resource: 'Calculator', reason: 'Test' }]), context));
+
+  console.log('Tests complete!');
 }
 
-run().catch(console.error);
+testPhase1().catch(console.error);
